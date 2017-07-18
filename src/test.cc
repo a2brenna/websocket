@@ -27,5 +27,8 @@ int main(){
     assert(address5.host() == "test.com");
     assert(address5.port() == 80);
     assert(address5.resource() == "/foo");
+
+    TCP tcp("127.0.0.1", 10000);
+    tcp.write("test");
     return 0;
 }

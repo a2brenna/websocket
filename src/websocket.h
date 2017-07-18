@@ -15,8 +15,13 @@ class Transport {
 class TCP : public Transport {
 
     public:
+        TCP(const std::string &host, const int &port);
+        ~TCP();
         std::string read();
         void write(const std::string &message);
+
+    private:
+        int _fd;
 
 };
 
