@@ -12,6 +12,8 @@ class Transport {
 
 };
 
+class Connection_Failed {};
+
 class TCP : public Transport {
 
     public:
@@ -22,6 +24,7 @@ class TCP : public Transport {
 
     private:
         int _fd;
+        bool _open;
 
 };
 

@@ -9,6 +9,8 @@
 
 #include <cassert>
 
+const size_t READ_BUFF_SIZE =  4096;
+
 Address::Address(const std::string &uri){
 
     size_t i = 0;
@@ -105,48 +107,64 @@ bool Address::tls() const{
 
 TCP::TCP(const std::string &host, const int &port){
 
-    const std::string port_string = [](const int &port){
-        std::stringstream s;
-        s << port;
-        return s.str();
-    }(port);
+    struct addrinfo *r = [](const std::string &host, const int &port){
 
-	const struct addrinfo hints = [](){
-		struct addrinfo hints;
-        //TODO: remove this?
-		memset(&hints, 0, sizeof(hints));
-		hints.ai_family = AF_INET;
-		hints.ai_socktype = SOCK_STREAM;
-		return hints;
-	}();
+        const std::string port_string = [](const int &port){
+            std::stringstream s;
+            s << port;
+            return s.str();
+        }(port);
 
-    struct addrinfo *r;
-    const int addrinfo_status = getaddrinfo(host.c_str(), port_string.c_str(), &hints, &r);
-    if(addrinfo_status != 0){
-        assert(false);
-    }
-    if(r == nullptr){
-        assert(false);
-    }
+        const struct addrinfo hints = [](){
+            struct addrinfo hints;
+            //TODO: remove this?
+            memset(&hints, 0, sizeof(hints));
+            hints.ai_family = AF_INET;
+            hints.ai_socktype = SOCK_STREAM;
+            return hints;
+        }();
 
-    _fd = socket(AF_INET, SOCK_STREAM, 0);
-    assert(_fd >= 0);
+        struct addrinfo *r;
+        const int addrinfo_status = getaddrinfo(host.c_str(), port_string.c_str(), &hints, &r);
+        if(addrinfo_status != 0){
+            assert(false);
+        }
+        if(r == nullptr){
+            assert(false);
+        }
+        return r;
+    }(host, port);
 
-    bool bound = false;
-    for(auto s = r; s != nullptr; s = s->ai_next){
-        const int b = connect(_fd, s->ai_addr, s->ai_addrlen);
-        if (b == 0) {
-            bound = true;
-            break;
+    _fd = [](const struct addrinfo *r){
+        const int fd = socket(AF_INET, SOCK_STREAM, 0);
+        assert(fd >= 0);
+
+        const bool connected = [](const int &fd, const struct addrinfo *r){
+            for(auto s = r; s != nullptr; s = s->ai_next){
+                const int b = connect(fd, s->ai_addr, s->ai_addrlen);
+                if (b == 0) {
+                    return true;
+                }
+                else{
+                    continue;
+                }
+            }
+
+            return false;
+        }(fd, r);
+
+        if(connected){
+            return fd;
         }
         else{
-            continue;
+            close(fd);
+            throw Connection_Failed();
         }
-    }
+    }(r);
+
+    _open = true;
 
     freeaddrinfo(r);
-
-	assert(bound);
 }
 
 TCP::~TCP(){
@@ -154,17 +172,63 @@ TCP::~TCP(){
 }
 
 void TCP::write(const std::string &message){
-    const auto s = ::write(_fd, message.c_str(), message.size());
-    assert(s == message.size());
+    if(_open){
+        const auto s = ::write(_fd, message.c_str(), message.size());
+        assert(s == message.size());
+    }
+    else{
+        assert(false);
+    }
 }
 
 std::string TCP::read(){
-    std::string msg;
-    msg.resize(4096);
+    if(_open){
+        std::string msg;
 
-    const auto r = ::read(_fd, &msg[0], 4096);
-    assert( (r > 0) && (r < 4096) );
+        while(true){
 
-    msg.resize(r);
-    return msg;
+            const size_t bytes_read = [](const int &fd, std::string &msg){
+                const size_t init_msg_size = msg.size();
+                msg.resize(init_msg_size + READ_BUFF_SIZE);
+
+                const size_t r = [](const int &fd, std::string &msg, const size_t &init_msg_size){
+                    if(init_msg_size == 0){
+                        return ::read(fd, &msg[0] + init_msg_size, READ_BUFF_SIZE);
+                    }
+                    else{
+                        return ::recv(fd, &msg[0] + init_msg_size, READ_BUFF_SIZE, MSG_DONTWAIT);
+                    }
+                }(fd, msg, init_msg_size);
+
+                if(r >= 0){
+                    msg.resize(init_msg_size + r);
+                }
+
+                return r;
+            }(_fd, msg);
+
+            if (bytes_read < 0){
+                assert(false);
+            }
+            else if(bytes_read == 0){
+                _open = false;
+                break;
+            }
+            else if(bytes_read < READ_BUFF_SIZE){
+                break;
+            }
+            else if(bytes_read == READ_BUFF_SIZE){
+                continue;
+            }
+            else{
+                assert(false);
+            }
+
+        }
+
+        return msg;
+    }
+    else{
+        assert(false);
+    }
 }
