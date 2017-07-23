@@ -14,6 +14,8 @@ class Transport {
 
 class Connection_Failed {};
 
+class Transport_Error {};
+
 class TCP : public Transport {
 
     public:

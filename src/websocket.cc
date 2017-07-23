@@ -9,7 +9,7 @@
 
 #include <cassert>
 
-const ssize_t READ_BUFF_SIZE =  4096;
+const ssize_t READ_BUFF_SIZE = 4096;
 
 Address::Address(const std::string &uri){
 
@@ -126,18 +126,19 @@ TCP::TCP(const std::string &host, const int &port){
 
         struct addrinfo *r;
         const int addrinfo_status = getaddrinfo(host.c_str(), port_string.c_str(), &hints, &r);
-        if(addrinfo_status != 0){
-            assert(false);
+        if((addrinfo_status != 0) || (r == nullptr)){
+            throw Transport_Error();
         }
-        if(r == nullptr){
-            assert(false);
+        else{
+            return r;
         }
-        return r;
     }(host, port);
 
     _fd = [](const struct addrinfo *r){
         const int fd = socket(AF_INET, SOCK_STREAM, 0);
-        assert(fd >= 0);
+        if(fd < 0){
+            throw Transport_Error();
+        }
 
         const bool connected = [](const int &fd, const struct addrinfo *r){
             for(auto s = r; s != nullptr; s = s->ai_next){
@@ -174,10 +175,12 @@ TCP::~TCP(){
 void TCP::write(const std::string &message){
     if(_open){
         const auto s = ::write(_fd, message.c_str(), message.size());
-        assert(s == message.size());
+        if(s != (ssize_t)message.size()){
+            throw Transport_Error();
+        }
     }
     else{
-        assert(false);
+        throw Transport_Error();
     }
 }
 
@@ -208,7 +211,7 @@ std::string TCP::read(){
             }(_fd, msg);
 
             if (bytes_read < 0){
-                assert(false);
+                throw Transport_Error();
             }
             else if(bytes_read == 0){
                 _open = false;
@@ -221,7 +224,7 @@ std::string TCP::read(){
                 continue;
             }
             else{
-                assert(false);
+                throw Transport_Error();
             }
 
         }
@@ -229,6 +232,6 @@ std::string TCP::read(){
         return msg;
     }
     else{
-        assert(false);
+        throw Transport_Error();
     }
 }
