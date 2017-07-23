@@ -9,7 +9,7 @@
 
 #include <cassert>
 
-const size_t READ_BUFF_SIZE =  4096;
+const ssize_t READ_BUFF_SIZE =  4096;
 
 Address::Address(const std::string &uri){
 
@@ -187,11 +187,11 @@ std::string TCP::read(){
 
         while(true){
 
-            const size_t bytes_read = [](const int &fd, std::string &msg){
+            const ssize_t bytes_read = [](const int &fd, std::string &msg){
                 const size_t init_msg_size = msg.size();
                 msg.resize(init_msg_size + READ_BUFF_SIZE);
 
-                const size_t r = [](const int &fd, std::string &msg, const size_t &init_msg_size){
+                const ssize_t r = [](const int &fd, std::string &msg, const size_t &init_msg_size){
                     if(init_msg_size == 0){
                         return ::read(fd, &msg[0] + init_msg_size, READ_BUFF_SIZE);
                     }
