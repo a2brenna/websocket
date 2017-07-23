@@ -2,6 +2,7 @@
 #define __WEBSOCKET_H__
 
 #include <string>
+#include <vector>
 #include <memory>
 
 class Transport {
@@ -61,7 +62,8 @@ class Client {
 
     public:
         Client(const Address &address);
-        std::string read();
+        ~Client();
+        std::vector<std::string> read();
         void write(const std::string &message);
 
     private:

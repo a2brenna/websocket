@@ -235,3 +235,29 @@ std::string TCP::read(){
         throw Transport_Error();
     }
 }
+
+Client::Client(const Address &address){
+    if(address.tls()){
+        assert(false);
+    }
+    else{
+        _transport = std::unique_ptr<Transport>(new TCP(address.host(), address.port()));
+    }
+
+    //perform handshake
+    assert(false);
+}
+
+Client::~Client(){
+
+    //close
+
+}
+
+std::vector<std::string> Client::read(){
+    assert(false);
+}
+
+void Client::write(const std::string &message){
+    return _transport->write(message);
+}
