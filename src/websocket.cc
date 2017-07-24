@@ -6,6 +6,9 @@
 #include <sys/socket.h>
 #include <netdb.h>
 #include <string.h>
+#include <sodium.h>
+
+#include "encode.h"
 
 #include <cassert>
 
@@ -237,12 +240,49 @@ std::string TCP::read(){
 }
 
 Client::Client(const Address &address){
+
     if(address.tls()){
         assert(false);
     }
     else{
         _transport = std::unique_ptr<Transport>(new TCP(address.host(), address.port()));
     }
+
+/*
+		GET /chat HTTP/1.1
+        Host: server.example.com
+        Upgrade: websocket
+        Connection: Upgrade
+        Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==
+        Origin: http://example.com
+        Sec-WebSocket-Protocol: chat, superchat
+        Sec-WebSocket-Version: 13
+*/
+
+    const std::string opening = [](const Address &address){
+        const std::string encoded_nonce = [](){
+            unsigned char nonce[16];
+            randombytes_buf(nonce, 16);
+            return base64_encode(nonce, 16);
+        }();
+
+        const std::string protocol = "chat";
+
+        std::string opening = "GET " + address.resource() + " HTTP/1.1\n";
+        opening.append("Host: " + address.host() + "\n");
+        opening.append("Upgrade: websocket\n");
+        opening.append("Connection: Upgrade\n");
+        opening.append("Sec-WebSocket-Key: " + encoded_nonce + "\n");
+        //opening.append("Origin: " + origin + "\n");
+        opening.append("Sec-WebSocket-Protocol: " + protocol + "\n");
+        opening.append("Sec-WebSocket-Version: 13\n");
+
+        return opening;
+    }(address);
+
+    std::cout << opening << std::endl;
+
+    _transport->write(opening);
 
     //perform handshake
     assert(false);

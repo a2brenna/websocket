@@ -30,5 +30,8 @@ int main(){
 
     TCP tcp("127.0.0.1", 10000);
     tcp.write("test");
+
+    Client c(std::string("ws://127.0.0.1:10001"));
+
     return 0;
 }
