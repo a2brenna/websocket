@@ -271,11 +271,52 @@ Client::Client(const Address &address){
 
     _transport->write(opening);
 
-    const std::string response = _transport->read();
+    const std::pair<std::vector<std::string>, std::string> response = [](const std::unique_ptr<Transport> &transport){
+        const std::string r = transport->read();
 
-    std::cout << "--- response header ---" << std::endl;
-    std::cout << response << std::endl;
+        std::cout << "Total Size: " << r.size() << std::endl;
 
+        std::vector<std::string> lines;
+        size_t line_start = 0;
+        size_t i = 0;
+        while(i < (r.size() - 3)){
+            if( (r[i] == '\r') && (r[i+1] == '\n') && (r[i+2] == '\r') && (r[i+3] == '\n')){
+                const std::string line(r, line_start, (i - line_start));
+                lines.push_back(line);
+                i += 4;
+                line_start = i;
+                break;
+            }
+            else if( (r[i] == '\r') && (r[i+1] == '\n') ){
+                const std::string line(r, line_start, (i - line_start));
+                lines.push_back(line);
+                i += 2;
+                line_start = i;
+            }
+            else{
+                i += 1;
+            }
+        }
+
+        const std::string remainder(r, i, r.size() - i);
+
+        return std::pair<std::vector<std::string>, std::string>(lines,remainder);
+    }(_transport);
+
+    std::cout << "HTTP_RESPONSE" << std::endl;
+    size_t total_size = 0;
+    for(const auto &l: response.first){
+        std::cout << l << std::endl;
+        total_size += l.size() + 2;
+    }
+    total_size += 2;
+
+    total_size += response.second.size();
+
+    std::cout << "Actual Size: " << total_size << std::endl;
+
+    std::cout << "REMAINDER" << std::endl;
+    std::cout << response.second << std::endl;
 
 }
 
