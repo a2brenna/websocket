@@ -248,17 +248,6 @@ Client::Client(const Address &address){
         _transport = std::unique_ptr<Transport>(new TCP(address.host(), address.port()));
     }
 
-/*
-		GET /chat HTTP/1.1
-        Host: server.example.com
-        Upgrade: websocket
-        Connection: Upgrade
-        Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==
-        Origin: http://example.com
-        Sec-WebSocket-Protocol: chat, superchat
-        Sec-WebSocket-Version: 13
-*/
-
     const std::string opening = [](const Address &address){
         const std::string encoded_nonce = [](){
             unsigned char nonce[16];
@@ -266,26 +255,28 @@ Client::Client(const Address &address){
             return base64_encode(nonce, 16);
         }();
 
-        const std::string protocol = "chat";
-
-        std::string opening = "GET " + address.resource() + " HTTP/1.1\n";
-        opening.append("Host: " + address.host() + "\n");
-        opening.append("Upgrade: websocket\n");
-        opening.append("Connection: Upgrade\n");
-        opening.append("Sec-WebSocket-Key: " + encoded_nonce + "\n");
-        //opening.append("Origin: " + origin + "\n");
-        opening.append("Sec-WebSocket-Protocol: " + protocol + "\n");
-        opening.append("Sec-WebSocket-Version: 13\n");
+        std::string opening = "GET " + address.resource() + " HTTP/1.1\r\n";
+        opening.append("Upgrade: websocket\r\n");
+        opening.append("Connection: Upgrade\r\n");
+        opening.append("Host: " + address.host() + "\r\n");
+        opening.append("Sec-WebSocket-Key: " + encoded_nonce + "\r\n");
+        opening.append("Sec-WebSocket-Version: 13\r\n");
+        opening.append("\r\n\r\n");
 
         return opening;
     }(address);
 
+    std::cout << "--- request header ---" << std::endl;
     std::cout << opening << std::endl;
 
     _transport->write(opening);
 
-    //perform handshake
-    assert(false);
+    const std::string response = _transport->read();
+
+    std::cout << "--- response header ---" << std::endl;
+    std::cout << response << std::endl;
+
+
 }
 
 Client::~Client(){
@@ -295,7 +286,10 @@ Client::~Client(){
 }
 
 std::vector<std::string> Client::read(){
-    assert(false);
+    std::vector<std::string> ms;
+    std::string m = _transport->read();
+    ms.push_back(m);
+    return ms;
 }
 
 void Client::write(const std::string &message){
