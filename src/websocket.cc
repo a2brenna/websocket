@@ -1,5 +1,6 @@
 #include "websocket.h"
 #include <iostream>
+#include <map>
 
 #include <sstream>
 #include <unistd.h>
@@ -266,15 +267,10 @@ Client::Client(const Address &address){
         return opening;
     }(address);
 
-    std::cout << "--- request header ---" << std::endl;
-    std::cout << opening << std::endl;
-
     _transport->write(opening);
 
     const std::pair<std::vector<std::string>, std::string> response = [](const std::unique_ptr<Transport> &transport){
         const std::string r = transport->read();
-
-        std::cout << "Total Size: " << r.size() << std::endl;
 
         std::vector<std::string> lines;
         size_t line_start = 0;
@@ -303,20 +299,38 @@ Client::Client(const Address &address){
         return std::pair<std::vector<std::string>, std::string>(lines,remainder);
     }(_transport);
 
-    std::cout << "HTTP_RESPONSE" << std::endl;
-    size_t total_size = 0;
-    for(const auto &l: response.first){
-        std::cout << l << std::endl;
-        total_size += l.size() + 2;
-    }
-    total_size += 2;
+    assert(response.first.front() == "HTTP/1.1 101 Web Socket Protocol Handshake");
 
-    total_size += response.second.size();
+    const std::map<std::string, std::string> headers = [](const std::vector<std::string> &response_http){
+        std::map<std::string, std::string> headers;
 
-    std::cout << "Actual Size: " << total_size << std::endl;
+        auto i = response_http.begin();
+        i++;
 
-    std::cout << "REMAINDER" << std::endl;
-    std::cout << response.second << std::endl;
+        for( ; i != response_http.end(); i++){
+            const auto line = *i;
+
+            size_t i = 0;
+            while(i < line.size() - 3){
+                if( (line[i] == ':') && (line[i+1] == ' ') ){
+                    const std::string key(line, 0, i);
+                    const std::string value(line, i + 2, line.size() - (i + 2));
+                    assert(headers.count(key) == 0);
+                    headers[key] = value;
+                    break;
+                }
+                else{
+                    i += 1;
+                }
+            }
+        }
+
+        return headers;
+    }(response.first);
+
+    const std::string correct_accept = "";
+    assert(true);
+    //assert(correct_accept == headers.at("Sec-WebSocket-Accept"));
 
 }
 
