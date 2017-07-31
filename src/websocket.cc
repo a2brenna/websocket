@@ -15,6 +15,24 @@
 
 const ssize_t READ_BUFF_SIZE = 4096;
 
+const std::string binary_to_string(const std::string &bytes){
+    std::string string_rep;
+    for(const auto &c: bytes){
+        uint8_t scratch = c;
+        for(size_t i = 0; i < 8; i++){
+            const uint8_t high_bit = scratch & 128;
+            if(high_bit != 0){
+                string_rep.append("1");
+            }
+            else{
+                string_rep.append("0");
+            }
+            scratch = scratch << 1;
+        }
+    }
+    return string_rep;
+}
+
 Address::Address(const std::string &uri){
 
     size_t i = 0;
@@ -108,6 +126,64 @@ int Address::port() const{
 bool Address::tls() const{
     return _tls;
 }
+
+
+class Frame {
+
+    public:
+        Frame(const std::string &frame){
+            _frame = frame;
+        };
+
+        bool fin() const{
+            return _frame[0] & 128;
+        };
+
+        bool rsv1() const{
+            return _frame[0] & 64;
+        };
+
+        bool rsv2() const{
+            return _frame[0] & 32;
+        };
+
+        bool rsv3() const{
+            return _frame[0] & 16;
+        };
+
+        uint32_t opcode() const{
+            uint32_t code = _frame[0] & 127;
+            return code;
+        };
+
+        bool masked() const{
+            return _frame[1] & 128;
+        };
+
+        size_t payload_len() const{
+            assert(false);
+        };
+
+    private:
+        std::string _frame;
+
+};
+
+std::ostream& operator<<(std::ostream &os, const Frame &frame){
+
+    os << "Fin: " << frame.fin() << std::endl;
+    os << "RSV1: " << frame.rsv1() << std::endl;
+    os << "RSV2: " << frame.rsv2() << std::endl;
+    os << "RSV3: " << frame.rsv3() << std::endl;
+    os << "Opcode: " << frame.opcode() << std::endl;
+    os << "Masked: " << frame.masked() << std::endl;
+    return os;
+
+};
+
+class Frame_Header {
+
+};
 
 TCP::TCP(const std::string &host, const int &port){
 
@@ -272,6 +348,8 @@ Client::Client(const Address &address){
     const std::pair<std::vector<std::string>, std::string> response = [](const std::unique_ptr<Transport> &transport){
         const std::string r = transport->read();
 
+        std::cout << r;
+
         std::vector<std::string> lines;
         size_t line_start = 0;
         size_t i = 0;
@@ -331,6 +409,11 @@ Client::Client(const Address &address){
     const std::string correct_accept = "";
     assert(true);
     //assert(correct_accept == headers.at("Sec-WebSocket-Accept"));
+    //
+    //
+    std::cout << "0x" << base16_encode(response.second) << std::endl;
+    const Frame f(response.second);
+    std::cout << f << std::endl;
 
 }
 

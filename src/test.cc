@@ -31,12 +31,7 @@ int main(){
 
     Client c(std::string("ws://echo.websocket.org"));
 
-    while(true){
-        const auto incoming_messages = c.read();
-        for(const auto &m: incoming_messages){
-            std::cout << m << std::endl;
-        }
-    }
+    c.read();
 
     return 0;
 }
