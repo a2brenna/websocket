@@ -127,6 +127,15 @@ bool Address::tls() const{
     return _tls;
 }
 
+enum OPCODE {
+	CONTINUATION = 0x0,
+	TEXT_FRAME = 0x1,
+	BINARY_FRAME = 0x2,
+	CLOSE = 8,
+	PING = 9,
+	PONG = 0xa
+};
+
 
 class Frame {
 
@@ -136,7 +145,7 @@ class Frame {
         };
 
         bool fin() const{
-            return _frame[0] & 128;
+            return (_frame[0] & 0x80) == 0x80;
         };
 
         bool rsv1() const{
@@ -151,13 +160,12 @@ class Frame {
             return _frame[0] & 16;
         };
 
-        uint32_t opcode() const{
-            uint32_t code = _frame[0] & 127;
-            return code;
+        OPCODE opcode() const{
+            return (OPCODE)(_frame[0] & 0x0f);
         };
 
         bool masked() const{
-            return _frame[1] & 128;
+            return (_frame[1] & 0x80) == 0x80;
         };
 
         size_t payload_len() const{
@@ -377,7 +385,7 @@ Client::Client(const Address &address){
         return std::pair<std::vector<std::string>, std::string>(lines,remainder);
     }(_transport);
 
-    assert(response.first.front() == "HTTP/1.1 101 Web Socket Protocol Handshake");
+    //assert(response.first.front() == "HTTP/1.1 101 Web Socket Protocol Handshake");
 
     const std::map<std::string, std::string> headers = [](const std::vector<std::string> &response_http){
         std::map<std::string, std::string> headers;
