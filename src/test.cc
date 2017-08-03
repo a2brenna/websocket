@@ -29,7 +29,7 @@ int main(){
     assert(address5.resource() == "/foo");
 
 
-    Client c(std::string("ws://echo.websocket.org"));
+    Client c(std::string("ws://127.0.0.1:10001"));
 
     c.read();
 
