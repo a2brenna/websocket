@@ -68,6 +68,8 @@ class Client {
 
     private:
         std::unique_ptr<Transport> _transport;
+        std::string _buffer;
+        std::vector<std::string> _process_buffer();
 
 };
 
