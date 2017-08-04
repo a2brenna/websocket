@@ -1,18 +1,10 @@
 #include "transport.h"
 
-#include <iostream>
-#include <map>
-
-#include <sstream>
 #include <unistd.h>
 #include <sys/socket.h>
 #include <netdb.h>
-#include <sodium.h>
 #include <string.h>
-
-#include "encode.h"
-
-#include <cassert>
+#include <sstream>
 
 const ssize_t READ_BUFF_SIZE = 4096;
 
@@ -20,6 +12,7 @@ TCP::TCP(const std::string &host, const int &port){
 
     struct addrinfo *r = [](const std::string &host, const int &port){
 
+        //TODO: why not std::to_string(port)?
         const std::string port_string = [](const int &port){
             std::stringstream s;
             s << port;
