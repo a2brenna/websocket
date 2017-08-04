@@ -31,7 +31,12 @@ int main(){
 
     Client c(std::string("ws://127.0.0.1:10001"));
 
-    c.read();
+    for(size_t i = 0; ; i++){
+        c.write("Test " + std::to_string(i));
+        for(const auto &m: c.read()){
+            std::cout << m << std::endl;
+        }
+    }
 
     return 0;
 }
