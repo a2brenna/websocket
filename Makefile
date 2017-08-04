@@ -10,11 +10,14 @@ CXXFLAGS=-DGITREF=${GITREF} -DGITSTATUS=${GITSTATUS} -L${LIBRARY_DIR} -I${INCLUD
 
 all: test
 
-test: test.o websocket.o encode.o
-	${CXX} ${CXXFLAGS} -o test test.o websocket.o encode.o -lsodium
+test: test.o websocket.o encode.o transport.o
+	${CXX} ${CXXFLAGS} -o test test.o websocket.o transport.o encode.o -lsodium
 
 websocket.o: src/websocket.cc src/websocket.h
 	${CXX} ${CXXFLAGS} -c src/websocket.cc -o websocket.o
+
+transport.o: src/transport.cc src/transport.h
+	${CXX} ${CXXFLAGS} -c src/transport.cc -o transport.o
 
 test.o: src/test.cc
 	${CXX} ${CXXFLAGS} -c src/test.cc -o test.o
