@@ -110,12 +110,12 @@ bool Address::tls() const{
 }
 
 enum OPCODE {
-	CONTINUATION = 0x0,
-	TEXT_FRAME = 0x1,
-	BINARY_FRAME = 0x2,
-	CLOSE = 8,
-	PING = 9,
-	PONG = 0xa
+	CONTINUATION = 0x00,
+	TEXT_FRAME = 0x01,
+	BINARY_FRAME = 0x02,
+	CLOSE = 0x08,
+	PING = 0x09,
+	PONG = 0x0a
 };
 
 class E_MALFORMED_HEADER {};
@@ -190,6 +190,7 @@ class Header {
 
         void set_masked(){
             masked = true;
+            assert(sizeof(mask) == 4);
             randombytes_buf(mask, sizeof(mask));
             return;
         }
@@ -284,7 +285,7 @@ class Header {
 Client::Client(const Address &address){
 
     if(address.tls()){
-        assert(false);
+        _transport = std::unique_ptr<Transport>(new TLS(address.host(), address.port()));
     }
     else{
         _transport = std::unique_ptr<Transport>(new TCP(address.host(), address.port()));
@@ -301,9 +302,12 @@ Client::Client(const Address &address){
         opening.append("Upgrade: websocket\r\n");
         opening.append("Connection: Upgrade\r\n");
         opening.append("Host: " + address.host() + "\r\n");
+        opening.append("Origin: http://" + address.host() + "\r\n");
         opening.append("Sec-WebSocket-Key: " + encoded_nonce + "\r\n");
         opening.append("Sec-WebSocket-Version: 13\r\n");
         opening.append("\r\n\r\n");
+
+        std::cout << opening;
 
         return opening;
     }(address);
@@ -312,6 +316,8 @@ Client::Client(const Address &address){
 
     const std::pair<std::vector<std::string>, std::string> response = [](const std::unique_ptr<Transport> &transport){
         const std::string r = transport->read();
+
+        std::cout << r;
 
         std::vector<std::string> lines;
         size_t line_start = 0;
@@ -388,6 +394,8 @@ std::vector<std::string> Client::_process_buffer(){
     while(!_buffer.empty()){
         const Header h(_buffer);
 
+        std::cout << "Buffer: " << base16_encode(_buffer) << std::endl;
+
         if(h.opcode == PING){
             assert(false);
         }
@@ -446,6 +454,11 @@ void Client::write(const std::string &message){
     }(message, h.mask);
 
     const std::string frame_header = h.str();
+
+    std::cout << "Header: " << base16_encode(frame_header) << std::endl;
+
+    std::cout << "Payload: " << base16_encode(masked_payload) << std::endl;
+    std::cout << "Payload len: " << masked_payload.size() << std::endl;
 
     _transport->write(frame_header + masked_payload);
 }

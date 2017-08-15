@@ -1,6 +1,8 @@
 #include <iostream>
 #include <cassert>
 #include "websocket.h"
+#include <chrono>
+#include <thread>
 
 int main(){
     std::cout << "Synchronous Websocket Test..." << std::endl;
@@ -29,12 +31,16 @@ int main(){
     assert(address5.resource() == "/foo");
 
 
-    Client c(std::string("ws://127.0.0.1:10001"));
+    Client c(std::string("ws://echo.websocket.org"));
+    //Client c(std::string("wss://api.bitfinex.com/ws"));
+    //Client c(std::string("ws://127.0.0.1:10001"));
+    //
+    const std::string sub = "{\"event\": \"subscribe\", \"channel\": \"tBTCUSD\"}";
 
-    for(size_t i = 0; ; i++){
-        c.write("Test " + std::to_string(i));
+    while(true){
+        c.write("Test");
         for(const auto &m: c.read()){
-            std::cout << m << std::endl;
+            //std::cout << m << std::endl;
         }
     }
 
