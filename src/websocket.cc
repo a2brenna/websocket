@@ -1,6 +1,7 @@
 #include "websocket.h"
 #include <iostream>
 #include <map>
+#include <arpa/inet.h>
 
 #include <sstream>
 #include <unistd.h>
@@ -309,13 +310,10 @@ Client::Client(const Address &address){
 
         return opening;
     }(address);
-
     _transport->write(opening);
 
     const std::pair<std::vector<std::string>, std::string> response = [](const std::unique_ptr<Transport> &transport){
         const std::string r = transport->read();
-
-        std::cout << r;
 
         std::vector<std::string> lines;
         size_t line_start = 0;
@@ -360,7 +358,6 @@ Client::Client(const Address &address){
                 if( (line[i] == ':') && (line[i+1] == ' ') ){
                     const std::string key(line, 0, i);
                     const std::string value(line, i + 2, line.size() - (i + 2));
-                    assert(headers.count(key) == 0);
                     headers[key] = value;
                     break;
                 }
@@ -392,24 +389,38 @@ std::vector<std::string> Client::_process_buffer(){
     while(!_buffer.empty()){
         const Header h(_buffer);
 
-        std::cout << "Buffer: " << base16_encode(_buffer) << std::endl;
+        const auto frame_size = h.payload_len + h.header_len();
 
         if(h.opcode == PING){
             assert(false);
         }
+        else if(h.opcode == PONG){
+            assert(false);
+        }
+        else if(h.opcode == CLOSE){
+            assert(!h.masked);
+            if(h.payload_len > 0){
+                const std::string payload(&_buffer[h.header_len()], h.payload_len);
+                _buffer.erase(0, frame_size);
 
-        const auto frame_size = h.payload_len + h.header_len();
-        if(frame_size <= _buffer.size()){
-            if(!h.masked){
-                messages.push_back(std::string(&_buffer[h.header_len()], h.payload_len));
+                assert(payload.size() >= 2);
+
+                const uint16_t close_status = [](const std::string &payload){
+                    uint16_t close_status;
+                    ::memcpy(&close_status, &payload[0], 2);
+                    return ntohs(close_status);
+                }(payload);
             }
-            else{
-                assert(false);
-            }
-            _buffer.erase(0, frame_size);
         }
         else{
-            break;
+            if(frame_size <= _buffer.size()){
+                assert(!h.masked);
+                messages.push_back(std::string(&_buffer[h.header_len()], h.payload_len));
+                _buffer.erase(0, frame_size);
+            }
+            else{
+                break;
+            }
         }
     }
 
@@ -452,11 +463,6 @@ void Client::write(const std::string &message){
     }(message, h.mask);
 
     const std::string frame_header = h.str();
-
-    std::cout << "Header: " << base16_encode(frame_header) << std::endl;
-
-    std::cout << "Payload: " << base16_encode(masked_payload) << std::endl;
-    std::cout << "Payload len: " << masked_payload.size() << std::endl;
 
     _transport->write(frame_header + masked_payload);
 }

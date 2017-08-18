@@ -5,7 +5,6 @@
 #include <netdb.h>
 #include <string.h>
 #include <sstream>
-#include <iostream>
 
 #include <cassert>
 
@@ -200,7 +199,6 @@ TLS::TLS(const std::string &host, const int &port){
 
     const auto handshake_status = gnutls_handshake(_tls_session);
     if(handshake_status != GNUTLS_E_SUCCESS){
-        std::cout << "gnutls_handshake: " << handshake_status << std::endl;
         throw Transport_Error();
     }
 
@@ -242,8 +240,6 @@ std::string TLS::read(){
             }(_tls_session, msg);
 
             if (bytes_read < 0){
-                std::cout << "msg: " << msg << std::endl;
-                std::cout << "recv_errno: " << bytes_read << std::endl;
                 throw Transport_Error();
             }
             else if(bytes_read == 0){

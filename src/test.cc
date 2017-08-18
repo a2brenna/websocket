@@ -31,16 +31,12 @@ int main(){
     assert(address5.resource() == "/foo");
 
 
-    Client c(std::string("ws://echo.websocket.org"));
-    //Client c(std::string("wss://api.bitfinex.com/ws"));
-    //Client c(std::string("ws://127.0.0.1:10001"));
-    //
-    const std::string sub = "{\"event\": \"subscribe\", \"channel\": \"tBTCUSD\"}";
+    Client c(std::string("wss://echo.websocket.org/"));
 
-    while(true){
-        c.write("Test");
+    for(size_t i = 0 ; i < std::numeric_limits<size_t>::max(); i++){
+        c.write(std::to_string(i));
         for(const auto &m: c.read()){
-            //std::cout << m << std::endl;
+            std::cout << m << std::endl;
         }
     }
 
