@@ -305,9 +305,7 @@ Client::Client(const Address &address){
         opening.append("Origin: http://" + address.host() + "\r\n");
         opening.append("Sec-WebSocket-Key: " + encoded_nonce + "\r\n");
         opening.append("Sec-WebSocket-Version: 13\r\n");
-        opening.append("\r\n\r\n");
-
-        std::cout << opening;
+        opening.append("\r\n");
 
         return opening;
     }(address);
