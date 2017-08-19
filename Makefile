@@ -8,10 +8,16 @@ GITSTATUS=\"$(shell echo 'if [ "x$$(git status -s)" == "x" ]; then echo "clean";
 CXX=g++
 CXXFLAGS=-DGITREF=${GITREF} -DGITSTATUS=${GITSTATUS} -L${LIBRARY_DIR} -I${INCLUDE_DIR} -march=native -O3 -flto -std=c++14 -fPIC -Wall -Wextra -fopenmp -fno-omit-frame-pointer -g
 
-all: test
+all: test libwebsocket.so libwebsocket.a
 
 test: test.o websocket.o encode.o transport.o
 	${CXX} ${CXXFLAGS} -o test test.o websocket.o transport.o encode.o -lsodium -lgnutls
+
+libwebsocket.so: websocket.o transport.o encode.o
+	${CXX} ${CXXFLAGS} -shared -Wl,-soname,libwebsocket.so -o libwebsocket.so websocket.o transport.o encode.o
+
+libwebsocket.a: websocket.o transport.o encode.o
+	 ar rcs libwebsocket.a websocket.o transport.o encode.o
 
 websocket.o: src/websocket.cc src/websocket.h
 	${CXX} ${CXXFLAGS} -c src/websocket.cc -o websocket.o
@@ -24,6 +30,14 @@ test.o: src/test.cc
 
 encode.o: src/encode.cc
 	${CXX} ${CXXFLAGS} -c src/encode.cc -o encode.o
+
+install: libwebsocket.so libwebsocket.a src/websocket.h src/transport.h
+	mkdir -p ${DESTDIR}/${PREFIX}/lib
+	cp *.a ${DESTDIR}/${PREFIX}/lib
+	cp *.so ${DESTDIR}/${PREFIX}/lib
+	mkdir -p ${DESTDIR}/${PREFIX}/include/websocket/
+	cp src/websocket.h ${DESTDIR}/${PREFIX}/include/websocket/
+	cp src/transport.h ${DESTDIR}/${PREFIX}/include/websocket/
 
 clean:
 	rm -rf *.o

@@ -13,6 +13,7 @@ class Address {
 
     public:
         Address(const std::string &uri);
+        Address(const char *url);
         std::string host() const;
         std::string resource() const;
         int port() const;

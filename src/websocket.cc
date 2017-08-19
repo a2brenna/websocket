@@ -16,6 +16,8 @@
 
 const ssize_t READ_BUFF_SIZE = 4096;
 
+Address::Address(const char *uri) : Address(std::string(uri)) {}
+
 Address::Address(const std::string &uri){
 
     size_t i = 0;
