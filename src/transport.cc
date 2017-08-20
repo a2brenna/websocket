@@ -215,6 +215,7 @@ std::string TLS::read(){
     if(_open){
         std::string msg;
 
+        //TODO: clean up this confusing mess, possibly do{...}while(...)
         while(true){
 
             const ssize_t bytes_read = [](const gnutls_session_t &session, std::string &msg){
@@ -225,10 +226,11 @@ std::string TLS::read(){
                     if(init_msg_size == 0){
                         return gnutls_record_recv(session, &msg[0], READ_BUFF_SIZE);
                     }
-                    else{
-                        assert(false);
-                        assert(gnutls_record_check_pending(session) != 0);
+                    else if(gnutls_record_check_pending(session) != 0){
                         return gnutls_record_recv(session, &msg[0] + init_msg_size, READ_BUFF_SIZE);
+                    }
+                    else{
+                        return (ssize_t)0;
                     }
                 }(session, msg, init_msg_size);
 
