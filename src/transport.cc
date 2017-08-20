@@ -9,7 +9,6 @@
 #include <cassert>
 
 //TODO: test fragmented messages by setting READ_BUFF_SIZE v small
-const ssize_t READ_BUFF_SIZE = 4096;
 
 struct addrinfo *get_addrinfo(const std::string &host, const int &port){
     //TODO: why not std::to_string(port)?
@@ -67,7 +66,9 @@ int get_fd(const struct addrinfo *r){
     }
 }
 
-TCP::TCP(const std::string &host, const int &port){
+TCP::TCP(const std::string &host, const int &port, const size_t &buff_size){
+
+    _buff_size = buff_size;
 
     struct addrinfo *r = get_addrinfo(host, port);
 
@@ -101,25 +102,25 @@ std::string TCP::read(){
 
         while(true){
 
-            const ssize_t bytes_read = [](const int &fd, std::string &msg){
+            const ssize_t bytes_read = [](const int &fd, std::string &msg, const size_t &buff_size){
                 const size_t init_msg_size = msg.size();
-                msg.resize(init_msg_size + READ_BUFF_SIZE);
+                msg.resize(init_msg_size + buff_size);
 
-                const ssize_t r = [](const int &fd, std::string &msg, const size_t &init_msg_size){
+                const ssize_t r = [](const int &fd, std::string &msg, const size_t &init_msg_size, const size_t &buff_size){
                     if(init_msg_size == 0){
-                        return ::read(fd, &msg[0], READ_BUFF_SIZE);
+                        return ::read(fd, &msg[0], buff_size);
                     }
                     else{
-                        return ::recv(fd, &msg[0] + init_msg_size, READ_BUFF_SIZE, MSG_DONTWAIT);
+                        return ::recv(fd, &msg[0] + init_msg_size, buff_size, MSG_DONTWAIT);
                     }
-                }(fd, msg, init_msg_size);
+                }(fd, msg, init_msg_size, buff_size);
 
                 if(r >= 0){
                     msg.resize(init_msg_size + r);
                 }
 
                 return r;
-            }(_fd, msg);
+            }(_fd, msg, _buff_size);
 
             if (bytes_read < 0){
                 throw Transport_Error();
@@ -128,10 +129,10 @@ std::string TCP::read(){
                 _open = false;
                 break;
             }
-            else if(bytes_read < READ_BUFF_SIZE){
+            else if(bytes_read < _buff_size){
                 break;
             }
-            else if(bytes_read == READ_BUFF_SIZE){
+            else if(bytes_read == _buff_size){
                 continue;
             }
             else{
@@ -147,7 +148,9 @@ std::string TCP::read(){
     }
 }
 
-TLS::TLS(const std::string &host, const int &port){
+TLS::TLS(const std::string &host, const int &port, const size_t &buff_size){
+
+    _buff_size = buff_size;
 
     const auto global_init = gnutls_global_init();
     if(global_init != GNUTLS_E_SUCCESS){
@@ -218,28 +221,28 @@ std::string TLS::read(){
         //TODO: clean up this confusing mess, possibly do{...}while(...)
         while(true){
 
-            const ssize_t bytes_read = [](const gnutls_session_t &session, std::string &msg){
+            const ssize_t bytes_read = [](const gnutls_session_t &session, std::string &msg, const size_t &buff_size){
                 const size_t init_msg_size = msg.size();
-                msg.resize(init_msg_size + READ_BUFF_SIZE);
+                msg.resize(init_msg_size + buff_size);
 
-                const ssize_t r = [](const gnutls_session_t &session, std::string &msg, const size_t &init_msg_size){
+                const ssize_t r = [](const gnutls_session_t &session, std::string &msg, const size_t &init_msg_size, const size_t &buff_size){
                     if(init_msg_size == 0){
-                        return gnutls_record_recv(session, &msg[0], READ_BUFF_SIZE);
+                        return gnutls_record_recv(session, &msg[0], buff_size);
                     }
                     else if(gnutls_record_check_pending(session) != 0){
-                        return gnutls_record_recv(session, &msg[0] + init_msg_size, READ_BUFF_SIZE);
+                        return gnutls_record_recv(session, &msg[0] + init_msg_size, buff_size);
                     }
                     else{
                         return (ssize_t)0;
                     }
-                }(session, msg, init_msg_size);
+                }(session, msg, init_msg_size, buff_size);
 
                 if(r >= 0){
                     msg.resize(init_msg_size + r);
                 }
 
                 return r;
-            }(_tls_session, msg);
+            }(_tls_session, msg, _buff_size);
 
             if (bytes_read < 0){
                 throw Transport_Error();
@@ -248,10 +251,10 @@ std::string TLS::read(){
                 _open = false;
                 break;
             }
-            else if(bytes_read < READ_BUFF_SIZE){
+            else if(bytes_read < _buff_size){
                 break;
             }
-            else if((bytes_read == READ_BUFF_SIZE) && (gnutls_record_check_pending(_tls_session) != 0)){
+            else if((bytes_read == _buff_size) && (gnutls_record_check_pending(_tls_session) != 0)){
                 continue;
             }
             else{

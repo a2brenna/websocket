@@ -14,8 +14,6 @@
 
 #include <cassert>
 
-const ssize_t READ_BUFF_SIZE = 4096;
-
 Address::Address(const char *uri) : Address(std::string(uri)) {}
 
 Address::Address(const std::string &uri){
@@ -285,13 +283,17 @@ class Header {
 
 };
 
-Client::Client(const Address &address){
+Client::Client(const Address &address) : Client(address, 4096) {}
+
+Client::Client(const Address &address, const size_t &buff_size){
+
+    assert(buff_size > 0);
 
     if(address.tls()){
-        _transport = std::unique_ptr<Transport>(new TLS(address.host(), address.port()));
+        _transport = std::unique_ptr<Transport>(new TLS(address.host(), address.port(), buff_size));
     }
     else{
-        _transport = std::unique_ptr<Transport>(new TCP(address.host(), address.port()));
+        _transport = std::unique_ptr<Transport>(new TCP(address.host(), address.port(), buff_size));
     }
 
     const std::string opening = [](const Address &address){

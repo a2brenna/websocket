@@ -31,6 +31,7 @@ class Client {
 
     public:
         Client(const Address &address);
+        Client(const Address &address, const size_t &buffer_size);
         ~Client();
         std::vector<std::string> read();
         void write(const std::string &message);

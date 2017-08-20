@@ -19,7 +19,7 @@ class Transport_Error {};
 class TCP : public Transport {
 
     public:
-        TCP(const std::string &host, const int &port);
+        TCP(const std::string &host, const int &port, const size_t &buff_size);
         ~TCP();
         std::string read();
         void write(const std::string &message);
@@ -27,13 +27,14 @@ class TCP : public Transport {
     private:
         int _fd;
         bool _open;
+        size_t _buff_size = 4096;
 
 };
 
 class TLS : public Transport {
 
     public:
-        TLS(const std::string &host, const int &port);
+        TLS(const std::string &host, const int &port, const size_t &buff_size);
         ~TLS();
         std::string read();
         void write(const std::string &message);
@@ -43,6 +44,7 @@ class TLS : public Transport {
         gnutls_certificate_credentials_t _credentials;
         int _fd;
         bool _open;
+        size_t _buff_size = 4096;
 
 };
 
