@@ -248,13 +248,12 @@ class Header {
                 mask_offset = 2;
             }
             else if(payload_len < 65536){
-                assert(false);
                 const uint8_t n = 126;
                 sh[1] = sh[1] | n;
-                /*
-                sh[2]
-                sh[3]
-                */
+
+                const uint16_t net_size = htons(payload_len);
+                ::memcpy(&(sh[2]), &net_size, sizeof(uint16_t));
+
                 mask_offset = 4;
             }
             else{
@@ -467,6 +466,8 @@ void Client::write(const std::string &message){
     }(message, h.mask);
 
     const std::string frame_header = h.str();
+
+    std::cout << base16_encode(frame_header) << std::endl;
 
     _transport->write(frame_header + masked_payload);
 }
