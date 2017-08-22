@@ -149,12 +149,14 @@ class Header {
                     return std::pair<uint64_t, int>(n, 2);
                 }
                 else if(n == 126){
-                    uint64_t payload_len = 0;
-                    payload_len |= ((uint64_t) data[2]) << 8;
-                    payload_len |= ((uint64_t) data[3]);
-                    return std::pair<uint64_t, int>(payload_len, 4);
+                    uint64_t net_len;
+                    ::memcpy(&net_len, &(data[2]), sizeof(uint16_t));
+                    uint16_t host_len = ntohs(net_len);
+                    return std::pair<uint64_t, int>(host_len, 4);
                 }
                 else if(n == 127){
+                    assert(false);
+                    /*
                     uint64_t payload_len = 0;
                     payload_len |= ((uint64_t) data[2]) << 56;
                     payload_len |= ((uint64_t) data[3]) << 48;
@@ -165,6 +167,7 @@ class Header {
                     payload_len |= ((uint64_t) data[8]) << 8;
                     payload_len |= ((uint64_t) data[9]);
                     return std::pair<uint64_t, int>(payload_len, 10);
+                    */
                 }
                 else{
                     assert(false);
@@ -466,8 +469,6 @@ void Client::write(const std::string &message){
     }(message, h.mask);
 
     const std::string frame_header = h.str();
-
-    std::cout << base16_encode(frame_header) << std::endl;
 
     _transport->write(frame_header + masked_payload);
 }

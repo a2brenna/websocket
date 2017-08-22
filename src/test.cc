@@ -42,12 +42,17 @@ int main(){
         }
     }
 
-    const std::string long_test = "7c c4 2f 04 5d ea 6d 93 c6 18 96 0f 50 9c c4 4e";
+    const std::string short_test = "7c c4 2f 04 5d ea 6d 93 c6 18 96 0f 50 9c c4 4e";
+    const std::string long_test = "7c c4 2f 04 5d ea 6d 93 c6 18 96 0f 50 9c c4 4e 7c c4 2f 04 5d ea 6d 93 c6 18 96 0f 50 9c c4 4e 7c c4 2f 04 5d ea 6d 93 c6 18 96 0f 50 9c c4 4e 7c c4 2f 04 5d ea 6d 93 c6 18 96 0f 50 9c c4 4e";
 
     assert(long_test.size() > TEST_BUFF_SIZE);
 
-    c.write(long_test);
+    c.write(short_test);
+	for(const auto &m: c.read()){
+		std::cout << m << std::endl;
+	}
 
+    c.write(long_test);
 	for(const auto &m: c.read()){
 		std::cout << m << std::endl;
 	}
