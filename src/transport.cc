@@ -218,57 +218,32 @@ std::string TLS::read(){
     if(_open){
         std::string msg;
 
-        //TODO: clean up this confusing mess, possibly do{...}while(...)
-        while(true){
+        do{
 
-            const ssize_t bytes_read = [](const gnutls_session_t &session, std::string &msg, const size_t &buff_size){
-                const size_t init_msg_size = msg.size();
-                msg.resize(init_msg_size + buff_size);
+            const size_t init_msg_size = msg.size();
+            msg.resize(init_msg_size + _buff_size);
 
-                const ssize_t r = [](const gnutls_session_t &session, std::string &msg, const size_t &init_msg_size, const size_t &buff_size){
-                    if(init_msg_size == 0){
-                        return gnutls_record_recv(session, &msg[0], buff_size);
-                    }
-                    else if(gnutls_record_check_pending(session) != 0){
-                        return gnutls_record_recv(session, &msg[0] + init_msg_size, buff_size);
-                    }
-                    else{
-                        return (ssize_t)0;
-                    }
-                }(session, msg, init_msg_size, buff_size);
+            const auto bytes_recvd  = gnutls_record_recv(_tls_session, &msg[0] + init_msg_size, _buff_size);
 
-                if(r >= 0){
-                    msg.resize(init_msg_size + r);
-                }
-
-                return r;
-            }(_tls_session, msg, _buff_size);
-
-            if (bytes_read < 0){
+            //Error
+            if(bytes_recvd < 0){
                 throw Transport_Error();
             }
-            else if(bytes_read == 0){
+
+            msg.resize(init_msg_size + bytes_recvd);
+
+            if(bytes_recvd == 0){
                 _open = false;
                 break;
             }
-            else if(bytes_read < _buff_size){
-                break;
-            }
-            else if((bytes_read == _buff_size) && (gnutls_record_check_pending(_tls_session) != 0)){
-                continue;
-            }
-            else{
-                throw Transport_Error();
-            }
 
-        }
+        }while(gnutls_record_check_pending(_tls_session) != 0);
 
         return msg;
     }
     else{
         throw Transport_Error();
     }
-
 }
 
 void TLS::write(const std::string &message){
