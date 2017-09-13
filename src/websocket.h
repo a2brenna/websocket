@@ -35,6 +35,7 @@ class Client {
         ~Client();
         std::vector<std::string> read();
         void write(const std::string &message);
+        int fd() const;
 
     private:
         std::unique_ptr<Transport> _transport;

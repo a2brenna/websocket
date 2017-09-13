@@ -258,3 +258,11 @@ void TLS::write(const std::string &message){
     }
     return;
 }
+
+int TLS::fd() const{
+    return _fd;
+}
+
+int TCP::fd() const{
+    return _fd;
+}

@@ -9,6 +9,7 @@ class Transport {
     public:
         virtual std::string read() = 0;
         virtual void write(const std::string &message) = 0;
+        virtual int fd() const = 0;
 
 };
 
@@ -23,6 +24,7 @@ class TCP : public Transport {
         ~TCP();
         std::string read();
         void write(const std::string &message);
+        int fd() const;
 
     private:
         int _fd;
@@ -38,6 +40,7 @@ class TLS : public Transport {
         ~TLS();
         std::string read();
         void write(const std::string &message);
+        int fd() const;
 
     private:
         gnutls_session_t _tls_session;

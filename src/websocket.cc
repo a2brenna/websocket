@@ -472,3 +472,7 @@ void Client::write(const std::string &message){
 
     _transport->write(frame_header + masked_payload);
 }
+
+int Client::fd() const{
+    return _transport->fd();
+}
