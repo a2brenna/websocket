@@ -155,8 +155,6 @@ class Header {
                     return std::pair<uint64_t, int>(host_len, 4);
                 }
                 else if(n == 127){
-                    assert(false);
-                    /*
                     uint64_t payload_len = 0;
                     payload_len |= ((uint64_t) data[2]) << 56;
                     payload_len |= ((uint64_t) data[3]) << 48;
@@ -167,7 +165,6 @@ class Header {
                     payload_len |= ((uint64_t) data[8]) << 8;
                     payload_len |= ((uint64_t) data[9]);
                     return std::pair<uint64_t, int>(payload_len, 10);
-                    */
                 }
                 else{
                     assert(false);
