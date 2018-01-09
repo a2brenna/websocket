@@ -156,14 +156,10 @@ class Header {
                 }
                 else if(n == 127){
                     uint64_t payload_len = 0;
-                    payload_len |= ((uint64_t) data[2]) << 56;
-                    payload_len |= ((uint64_t) data[3]) << 48;
-                    payload_len |= ((uint64_t) data[4]) << 40;
-                    payload_len |= ((uint64_t) data[5]) << 32;
-                    payload_len |= ((uint64_t) data[6]) << 24;
-                    payload_len |= ((uint64_t) data[7]) << 16;
-                    payload_len |= ((uint64_t) data[8]) << 8;
-                    payload_len |= ((uint64_t) data[9]);
+                    char *p = (char *)&payload_len;
+                    for(size_t i = 0; i < 8; i++){
+                        *(p + i) = data[9 - i];
+                    }
                     return std::pair<uint64_t, int>(payload_len, 10);
                 }
                 else{
@@ -194,7 +190,8 @@ class Header {
             assert(sizeof(mask) == 4);
             randombytes_buf(mask, sizeof(mask));
             return;
-        }
+        };
+
         void set_unmasked(){
             masked = false;
             mask[0] = 0;
@@ -202,7 +199,7 @@ class Header {
             mask[2] = 0;
             mask[3] = 0;
             return;
-        }
+        };
 
         uint64_t header_len() const{
             uint64_t header_len = 0;
