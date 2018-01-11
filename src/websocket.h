@@ -9,6 +9,16 @@
 
 class Bad_Address {};
 
+class E_MALFORMED_HEADER {
+
+    public:
+        const std::string header;
+        const std::string error;
+
+        E_MALFORMED_HEADER(const std::string &header, const std::string &error);
+
+};
+
 class Address {
 
     public:

@@ -14,6 +14,12 @@
 
 #include <cassert>
 
+E_MALFORMED_HEADER::E_MALFORMED_HEADER(const std::string &h, const std::string &e) :
+    header(h),
+    error(e)
+{
+}
+
 Address::Address(const char *uri) : Address(std::string(uri)) {}
 
 Address::Address(const std::string &uri){
@@ -119,7 +125,6 @@ enum OPCODE {
 	PONG = 0x0a
 };
 
-class E_MALFORMED_HEADER {};
 
 class Header {
 
@@ -131,7 +136,7 @@ class Header {
 
         Header(const std::string &data){
             if(data.size() < 2){
-                throw E_MALFORMED_HEADER();
+                throw E_MALFORMED_HEADER(data, "Header too small");
             }
 
             fin = (data[0] & 0x80) == 0x80;
@@ -141,7 +146,7 @@ class Header {
             const uint64_t header_len = 2 + (n == 126? 2 : 0) + (n == 127? 8 : 0) + (masked? 4 : 0);
 
             if(data.size() < header_len){
-                throw E_MALFORMED_HEADER();
+                throw E_MALFORMED_HEADER(data, "Incorrect header size");
             }
 
             const std::pair<uint64_t, int> size_info = [](const std::string &data, const int &n){
