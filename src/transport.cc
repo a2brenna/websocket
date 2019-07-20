@@ -225,6 +225,10 @@ std::string TLS::read(){
 
             const auto bytes_recvd  = gnutls_record_recv(_tls_session, &msg[0] + init_msg_size, _buff_size);
 
+            if(bytes_recvd == GNUTLS_E_AGAIN){
+                return read();
+            }
+
             //Error
             if(bytes_recvd < 0){
                 throw Transport_Error();
